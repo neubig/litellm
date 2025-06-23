@@ -1151,7 +1151,8 @@ class ModelResponseStream(ModelResponseBase):
         if created is None:
             created = int(time.time())
         else:
-            created = created
+            # Convert float timestamps to int (some providers like SambaNova return float)
+            created = int(created) if isinstance(created, (int, float)) else created
 
         if (
             "usage" in kwargs
@@ -1245,7 +1246,8 @@ class ModelResponse(ModelResponseBase):
         if created is None:
             created = int(time.time())
         else:
-            created = created
+            # Convert float timestamps to int (some providers like SambaNova return float)
+            created = int(created) if isinstance(created, (int, float)) else created
         model = model
         if usage is not None:
             if isinstance(usage, dict):
@@ -1504,7 +1506,8 @@ class TextCompletionResponse(OpenAIObject):
         if created is None:
             created = int(time.time())
         else:
-            created = created
+            # Convert float timestamps to int (some providers like SambaNova return float)
+            created = int(created) if isinstance(created, (int, float)) else created
 
         model = model
         if usage:
@@ -1646,7 +1649,8 @@ class ImageResponse(OpenAIImageResponse, BaseLiteLLMOpenAIResponseObject):
             data = []
 
         if created:
-            created = created
+            # Convert float timestamps to int (some providers like SambaNova return float)
+            created = int(created) if isinstance(created, (int, float)) else created
         else:
             created = int(time.time())
 
