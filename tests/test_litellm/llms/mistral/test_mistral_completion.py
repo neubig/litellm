@@ -158,3 +158,126 @@ async def test_mistral_transform_request_name_field_removal(sync_mode, respx_moc
     assert user_message["content"] == "Hello"
     assert "name" not in user_message  # The 'name' field should have been removed
 
+
+@pytest.fixture
+def mistral_api_response_with_n_parameter():
+    """Mock response data for Mistral API calls with n=2 parameter."""
+    return {
+        "id": "chatcmpl-mistral-123",
+        "object": "chat.completion",
+        "created": 1677652288,
+        "model": "mistral-medium-latest",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "First response from Mistral!",
+                },
+                "finish_reason": "stop",
+            },
+            {
+                "index": 1,
+                "message": {
+                    "role": "assistant",
+                    "content": "Second response from Mistral!",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
+    }
+
+
+@pytest.mark.parametrize("sync_mode", [True, False])
+@pytest.mark.asyncio
+async def test_mistral_n_parameter_support(sync_mode, respx_mock, mistral_api_response_with_n_parameter):
+    """
+    Test that Mistral supports the 'n' parameter for generating multiple completions.
+    
+    This test verifies that:
+    1. The 'n' parameter is accepted without UnsupportedParamsError
+    2. The parameter is properly passed to the Mistral API
+    3. Multiple choices are returned as expected
+    
+    This addresses the issue where litellm was throwing UnsupportedParamsError
+    for the 'n' parameter despite Mistral API officially supporting it.
+    """
+    litellm.disable_aiohttp_transport = True
+    
+    model = "mistral/mistral-medium-latest"
+    messages = [{"role": "user", "content": "Say hello"}]
+    
+    # Mock the Mistral API endpoint
+    respx_mock.post("https://api.mistral.ai/v1/chat/completions").respond(
+        json=mistral_api_response_with_n_parameter
+    )
+    
+    # This should NOT raise UnsupportedParamsError
+    if sync_mode:
+        response = litellm.completion(model=model, messages=messages, n=2)
+    else:
+        response = await litellm.acompletion(model=model, messages=messages, n=2)
+    
+    # Verify response has multiple choices
+    assert len(response.choices) == 2
+    assert response.choices[0].message.content == "First response from Mistral!"
+    assert response.choices[1].message.content == "Second response from Mistral!"
+    assert response.model == "mistral-medium-latest"
+    assert response.usage.total_tokens == 30
+    
+    # Verify that the 'n' parameter was passed to the API
+    assert len(respx_mock.calls) == 1
+    request = respx_mock.calls[0].request
+    import json
+    request_data = json.loads(request.content.decode('utf-8'))
+    assert request_data.get("n") == 2
+
+
+@pytest.mark.parametrize("sync_mode", [True, False])
+@pytest.mark.asyncio
+async def test_mistral_penalty_parameters_support(sync_mode, respx_mock, mistral_api_response):
+    """
+    Test that Mistral supports presence_penalty and frequency_penalty parameters.
+    
+    This test verifies that these parameters are accepted without UnsupportedParamsError
+    and properly passed to the Mistral API.
+    """
+    litellm.disable_aiohttp_transport = True
+    
+    model = "mistral/mistral-medium-latest"
+    messages = [{"role": "user", "content": "Write a creative story"}]
+    
+    # Mock the Mistral API endpoint
+    respx_mock.post("https://api.mistral.ai/v1/chat/completions").respond(
+        json=mistral_api_response
+    )
+    
+    # This should NOT raise UnsupportedParamsError
+    if sync_mode:
+        response = litellm.completion(
+            model=model, 
+            messages=messages, 
+            presence_penalty=0.5,
+            frequency_penalty=0.3
+        )
+    else:
+        response = await litellm.acompletion(
+            model=model, 
+            messages=messages, 
+            presence_penalty=0.5,
+            frequency_penalty=0.3
+        )
+    
+    # Verify response
+    assert response.choices[0].message.content == "Hello from Mistral! How can I help you today?"
+    assert response.model == "mistral-medium-latest"
+    
+    # Verify that the penalty parameters were passed to the API
+    assert len(respx_mock.calls) == 1
+    request = respx_mock.calls[0].request
+    import json
+    request_data = json.loads(request.content.decode('utf-8'))
+    assert request_data.get("presence_penalty") == 0.5
+    assert request_data.get("frequency_penalty") == 0.3
+

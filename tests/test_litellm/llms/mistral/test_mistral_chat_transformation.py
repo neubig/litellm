@@ -678,3 +678,97 @@ class TestMistralFileHandling:
         # Check that file_ids are modified to match Mistral's expected format
         assert result[0]["content"][1]["file_id"] == "file-12345"  # type: ignore
         assert result[0]["content"][2]["file_id"] == "file-67890"  # type: ignore
+
+
+class TestMistralParameterSupport:
+    """Test suite for Mistral parameter support functionality."""
+
+    def test_get_supported_openai_params_includes_n_parameter(self):
+        """Test that 'n' parameter is in supported parameters for Mistral models."""
+        mistral_config = MistralConfig()
+        supported_params = mistral_config.get_supported_openai_params(
+            "mistral/mistral-large-latest"
+        )
+        assert "n" in supported_params, "The 'n' parameter should be supported by Mistral API"
+
+    def test_get_supported_openai_params_includes_penalty_parameters(self):
+        """Test that presence_penalty and frequency_penalty are in supported parameters."""
+        mistral_config = MistralConfig()
+        supported_params = mistral_config.get_supported_openai_params(
+            "mistral/mistral-large-latest"
+        )
+        assert "presence_penalty" in supported_params, "presence_penalty should be supported by Mistral API"
+        assert "frequency_penalty" in supported_params, "frequency_penalty should be supported by Mistral API"
+
+    def test_map_openai_params_n_parameter(self):
+        """Test that 'n' parameter is properly mapped."""
+        mistral_config = MistralConfig()
+        
+        optional_params = {}
+        result = mistral_config.map_openai_params(
+            non_default_params={"n": 3},
+            optional_params=optional_params,
+            model="mistral/mistral-large-latest",
+            drop_params=False,
+        )
+        
+        assert optional_params.get("n") == 3, "The 'n' parameter should be mapped to optional_params"
+
+    def test_map_openai_params_penalty_parameters(self):
+        """Test that penalty parameters are properly mapped."""
+        mistral_config = MistralConfig()
+        
+        optional_params = {}
+        result = mistral_config.map_openai_params(
+            non_default_params={
+                "presence_penalty": 0.5,
+                "frequency_penalty": 0.3
+            },
+            optional_params=optional_params,
+            model="mistral/mistral-large-latest",
+            drop_params=False,
+        )
+        
+        assert optional_params.get("presence_penalty") == 0.5, "presence_penalty should be mapped"
+        assert optional_params.get("frequency_penalty") == 0.3, "frequency_penalty should be mapped"
+
+    def test_transform_request_preserves_n_parameter(self):
+        """Test that transform_request preserves the 'n' parameter."""
+        mistral_config = MistralConfig()
+
+        messages = [{"role": "user", "content": "Tell me a joke"}]
+        optional_params = {"n": 2}
+
+        result = mistral_config.transform_request(
+            model="mistral/mistral-large-latest",
+            messages=messages,
+            optional_params=optional_params,
+            litellm_params={},
+            headers={},
+        )
+
+        assert result.get("n") == 2, "The 'n' parameter should be preserved in the request"
+        assert len(result["messages"]) == 1
+        assert result["messages"][0]["role"] == "user"
+
+    def test_transform_request_preserves_penalty_parameters(self):
+        """Test that transform_request preserves penalty parameters."""
+        mistral_config = MistralConfig()
+
+        messages = [{"role": "user", "content": "Write a story"}]
+        optional_params = {
+            "presence_penalty": 0.6,
+            "frequency_penalty": 0.4
+        }
+
+        result = mistral_config.transform_request(
+            model="mistral/mistral-large-latest",
+            messages=messages,
+            optional_params=optional_params,
+            litellm_params={},
+            headers={},
+        )
+
+        assert result.get("presence_penalty") == 0.6, "presence_penalty should be preserved"
+        assert result.get("frequency_penalty") == 0.4, "frequency_penalty should be preserved"
+        assert len(result["messages"]) == 1
