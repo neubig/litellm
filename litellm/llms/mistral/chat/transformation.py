@@ -103,6 +103,9 @@ class MistralConfig(OpenAIGPTConfig):
             "stop",
             "response_format",
             "parallel_tool_calls",
+            "n",
+            "presence_penalty",
+            "frequency_penalty",
         ]
 
         # Add reasoning support for magistral models
@@ -187,6 +190,12 @@ class MistralConfig(OpenAIGPTConfig):
                 optional_params["_add_reasoning_prompt"] = True
             if param == "parallel_tool_calls":
                 optional_params["parallel_tool_calls"] = value
+            if param == "n":
+                optional_params["n"] = value
+            if param == "presence_penalty":
+                optional_params["presence_penalty"] = value
+            if param == "frequency_penalty":
+                optional_params["frequency_penalty"] = value
         return optional_params
 
     def _get_openai_compatible_provider_info(
