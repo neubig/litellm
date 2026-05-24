@@ -248,6 +248,43 @@ describe("TeamMembersComponent", () => {
     expect(screen.getByText(/10000 TPM/)).toBeInTheDocument();
   });
 
+  it("should display large decimal team member budgets with commas", () => {
+    renderWithProviders(
+      <TeamMembersComponent
+        teamData={createMockTeamData({
+          team_memberships: [
+            {
+              user_id: "user1@test.com",
+              team_id: "team-123",
+              budget_id: "budget1",
+              spend: 3272.038800300061,
+              total_spend: 1890.0782522499949,
+              litellm_budget_table: {
+                budget_id: "budget1",
+                soft_budget: null,
+                max_budget: 3270.599860154001,
+                max_parallel_requests: null,
+                tpm_limit: null,
+                rpm_limit: null,
+                model_max_budget: null,
+                budget_duration: null,
+                budget_reset_at: null,
+              },
+            },
+          ],
+        })}
+        canEditTeam={false}
+        handleMemberDelete={mockHandleMemberDelete}
+        setSelectedEditMember={mockSetSelectedEditMember}
+        setIsEditMemberModalVisible={mockSetIsEditMemberModalVisible}
+        setIsAddMemberModalVisible={mockSetIsAddMemberModalVisible}
+      />,
+    );
+
+    expect(screen.getByText("$3,270.5999")).toBeInTheDocument();
+    expect(screen.queryByText("$-")).not.toBeInTheDocument();
+  });
+
   it("should display No Limit for budget when member has no budget", () => {
     renderWithProviders(
       <TeamMembersComponent

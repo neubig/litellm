@@ -58,14 +58,14 @@ export default function TeamMemberTab({
     return membership?.total_spend ?? 0;
   };
 
-  const getUserBudget = (userId: string | null): string | null => {
+  const getUserBudget = (userId: string | null): number | null => {
     if (!userId) return null;
     const membership = teamData.team_memberships.find((tm) => tm.user_id === userId);
     const maxBudget = membership?.litellm_budget_table?.max_budget;
     if (maxBudget === null || maxBudget === undefined) {
       return null;
     }
-    return formatNumber(maxBudget);
+    return maxBudget;
   };
 
   // Helper function to get rate limits for a user
@@ -168,7 +168,7 @@ export default function TeamMemberTab({
         const budget = getUserBudget(record.user_id);
         return (
           <Typography.Text>
-            {budget ? `$${formatNumberWithCommas(Number(budget), 4)}` : "No Limit"}
+            {budget !== null ? `$${formatNumberWithCommas(budget, 4)}` : "No Limit"}
           </Typography.Text>
         );
       },
