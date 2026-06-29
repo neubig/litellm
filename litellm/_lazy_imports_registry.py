@@ -261,6 +261,7 @@ LLM_CONFIG_NAMES = (
     "FireworksAIConfig",
     "FireworksAITextCompletionConfig",
     "FireworksAIEmbeddingConfig",
+    "FireworksAIResponsesAPIConfig",
     "FriendliaiChatConfig",
     "JinaAIEmbeddingConfig",
     "XAIChatConfig",
@@ -1029,6 +1030,10 @@ _LLM_CONFIGS_IMPORT_MAP = {
     "FireworksAIEmbeddingConfig": (
         ".llms.fireworks_ai.embed.fireworks_ai_transformation",
         "FireworksAIEmbeddingConfig",
+    ),
+    "FireworksAIResponsesAPIConfig": (
+        ".llms.fireworks_ai.responses.transformation",
+        "FireworksAIResponsesAPIConfig",
     ),
     "FriendliaiChatConfig": (
         ".llms.friendliai.chat.transformation",

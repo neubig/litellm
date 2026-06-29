@@ -8140,6 +8140,8 @@ class ProviderConfigManager:
             return litellm.ManusResponsesAPIConfig()
         elif litellm.LlmProviders.PERPLEXITY == provider:
             return litellm.PerplexityResponsesConfig()
+        elif litellm.LlmProviders.FIREWORKS_AI == provider:
+            return litellm.FireworksAIResponsesAPIConfig()
         elif litellm.LlmProviders.DATABRICKS == provider:
             # Databricks Responses API is only compatible with OpenAI GPT models
             if model and "gpt" in model.lower():
